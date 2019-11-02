@@ -14,7 +14,7 @@ public class MainGetTwitterCorpus {
 
     final static String PATH = "/home/filip/Documents/repo/ironyDetection/src/main/resources/";
     final static String SUB_DIR = "irony-sarcasm-ling2016/";
-    final static String FILE_NAME = "regular";
+    final static String FILE_NAME = "figurative_test";
     final static String EXTENSION_OF_FILE = ".csv";
 
     final static String PATH_TO_FILE = PATH + SUB_DIR + FILE_NAME + EXTENSION_OF_FILE;
