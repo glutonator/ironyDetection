@@ -27,28 +27,28 @@ public class MainGetTwitterCorpus {
 //
 //        debug();
 
+        manFuncInBatches();
 
+
+    }
+
+    public static void manFuncInBatches() throws IOException {
         Map<Integer, long[]> integerMap = parseTOBatches(getFile(PATH_TO_FILE));
 
         Twitter twitter = getTwitter();
 
-        List<Pair<String, String>> pairOfPostIdAndText = new LinkedList<>();
-//        int i = 0;
-//        for (String postId : twitterIdsList) {
-//            if (i > 50) break;
         List<Pair<Long, String>> twitterMessageById = getTwitterMessageByMultipleIds(twitter, integerMap, false);
         saveToFileLong(twitterMessageById, FILE_NAME + EXTENSION_OF_FILE);
-//            pairOfPostIdAndText.add(new Pair<>(postId, twitterMessageById));
-//            i++;
     }
 
 
     public static void debug() throws IOException {
-        String tmp = "623083534907912192";
+//        String tmp = "627220119006130176";
+        String tmp = "627237147968471040";
+//        String tmp = "627303212215889920";
 
         Twitter twitter = getTwitter();
-//        getTwitterMessageById(twitter, tmp, true);
-//        getTwitterMessageByMultipleIds(twitter, tmp, true);
+        getTwitterMessageById(twitter, tmp, true);
     }
 
 
@@ -58,7 +58,6 @@ public class MainGetTwitterCorpus {
         List<Pair<String, String>> allPostsInFile = getAllPostsInFile(twitter, twitterIdsList);
 
         saveToFile(allPostsInFile, FILE_NAME);
-//        saveToFile(allPostsInFile, "testFile");
     }
 
     public static Map<Integer, long[]> parseTOBatches(List<String> twitterIdsList) {
@@ -74,7 +73,6 @@ public class MainGetTwitterCorpus {
             batchKey++;
         }
 
-//        System.out.println(map);
         return map;
 
     }
@@ -91,8 +89,8 @@ public class MainGetTwitterCorpus {
     }
 
     public static void saveToFileLong(List<Pair<Long, String>> allPostsInFile, String filePrefix) throws IOException {
-//        String fileName = filePrefix + java.time.LocalDateTime.now() + ".txt";
-        String fileName = "preprocessed____" + filePrefix + ".txt";
+        String fileName = filePrefix + java.time.LocalDateTime.now() + ".txt";
+//        String fileName = "preprocessed____" + filePrefix + ".txt";
         BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
         for (Pair<Long, String> pair : allPostsInFile) {
             writer.write(pair.getKey() + "\t" + pair.getValue() + "\n");
@@ -114,33 +112,19 @@ public class MainGetTwitterCorpus {
     }
 
 
-    //    public static List<Pair<Long,String>> getTwitterMessageByMultipleIds(Twitter twitter, long[] twitterPostIds, Boolean debug) {
     public static List<Pair<Long, String>> getTwitterMessageByMultipleIds(Twitter twitter, Map<Integer, long[]> twitterPostIds, Boolean debug) {
-//        String postText;
         List<Pair<Long, String>> out = new LinkedList<>();
         try {
-//            Status status = twitter.showStatus(number);
-//            long[] fff = {623054008991772672L, 623055404885372928L, 623056094445871104L};
 //            int bbbbreak = 0;
             for (Map.Entry<Integer, long[]> entry : twitterPostIds.entrySet()) {
                 List<Status> uuu = twitter.lookup(entry.getValue());
                 List<Pair<Long, String>> sssss = uuu.stream()
-                        .map(status -> new Pair<>(status.getId(), preprocesssTextMessage(status.getText())))
+                        .map(status -> new Pair<>(status.getId(), preprocessTextMessage(status.getText())))
                         .collect(Collectors.toList());
                 out.addAll(sssss);
 //                bbbbreak++;
 //                if (bbbbreak > 2) break;
             }
-//            List<Status> uuu = twitter.lookup(twitterPostIds);
-//            System.out.println(uuu);
-//            List<Pair<Long,String>> sssss  = uuu.stream().map(status -> new Pair<>(status.getId(),status.getText())).collect(Collectors.toList());
-
-//            postText = status.getText();
-//            postText = postText.replace("\n", " ");
-//            postText = postText.replace("\t", " ");
-//            if (debug) {
-//                System.out.println(postText);
-//            }
         } catch (TwitterException e) {
             e.printStackTrace();
         }
@@ -148,9 +132,10 @@ public class MainGetTwitterCorpus {
         return out;
     }
 
-    public static String preprocesssTextMessage(String message) {
+    public static String preprocessTextMessage(String message) {
         message = message.replace("\n", " ");
         message = message.replace("\t", " ");
+        message = message.replace("\r", " ");
 
         return message;
     }
@@ -162,8 +147,7 @@ public class MainGetTwitterCorpus {
         try {
             Status status = twitter.showStatus(number);
             postText = status.getText();
-            postText = postText.replace("\n", " ");
-            postText = postText.replace("\t", " ");
+            postText = preprocessTextMessage(postText);
             if (debug) {
                 System.out.println(postText);
             }
@@ -181,7 +165,6 @@ public class MainGetTwitterCorpus {
         try {
             reader = new BufferedReader(new FileReader(
                     path));
-//                    "/home/filip/Documents/repo/ironyDetection/src/main/resources/irony.csv"));
             String line = reader.readLine();
             int count = 0;
             while (line != null) {
@@ -202,17 +185,17 @@ public class MainGetTwitterCorpus {
     }
 
 
-    public static Twitter getTwitter() {
-        ConfigurationBuilder cb = new ConfigurationBuilder();
-        cb.setDebugEnabled(true)
-                .setOAuthConsumerKey("8yGPXIcLrdf8PUGFGk5Dx6mPC")
-                .setOAuthConsumerSecret("Kq1jbgekbuhvoWueKw9v2SJedD1vyH624VfF2JmfvNDsWcbkPh")
-                .setOAuthAccessToken("1115941392386351104-sHUgkaLkrxyOmMMps8qB81Zj18ClHl")
-                .setOAuthAccessTokenSecret("v2GXmdQ8tuPoxJ1ZjN4YQBGyylzGIIALXfJhaaybSp8Er");
-        TwitterFactory tf = new TwitterFactory(cb.build());
-        Twitter twitter = tf.getInstance();
-        return twitter;
-    }
+//    public static Twitter getTwitter() {
+//        ConfigurationBuilder cb = new ConfigurationBuilder();
+//        cb.setDebugEnabled(true)
+//                .setOAuthConsumerKey("8yGPXIcLrdf8PUGFGk5Dx6mPC")
+//                .setOAuthConsumerSecret("Kq1jbgekbuhvoWueKw9v2SJedD1vyH624VfF2JmfvNDsWcbkPh")
+//                .setOAuthAccessToken("1115941392386351104-sHUgkaLkrxyOmMMps8qB81Zj18ClHl")
+//                .setOAuthAccessTokenSecret("v2GXmdQ8tuPoxJ1ZjN4YQBGyylzGIIALXfJhaaybSp8Er");
+//        TwitterFactory tf = new TwitterFactory(cb.build());
+//        Twitter twitter = tf.getInstance();
+//        return twitter;
+//    }
 
 
 }
