@@ -9,23 +9,16 @@ import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 
 public class MainGetTwitterCorpus {
 
     final static String PATH = "/home/filip/Documents/repo/ironyDetection/src/main/resources/";
     final static String SUB_DIR = "irony-sarcasm-ling2016/";
-    final static String FILE_NAME = "irony.csv";
-    final static String PATH_TO_FILE = PATH + SUB_DIR + FILE_NAME;
+    final static String FILE_NAME = "irony";
+    final static String EXTENSION_OF_FILE = ".csv";
+
+    final static String PATH_TO_FILE = PATH + SUB_DIR + FILE_NAME + EXTENSION_OF_FILE;
 
 
     public static void main(String... args) throws IOException {
@@ -33,15 +26,29 @@ public class MainGetTwitterCorpus {
 //        manFunc();
 //
 //        debug();
-        parseTOBatches(getFile(PATH_TO_FILE));
+
+
+        Map<Integer, long[]> integerMap = parseTOBatches(getFile(PATH_TO_FILE));
+
+        Twitter twitter = getTwitter();
+
+        List<Pair<String, String>> pairOfPostIdAndText = new LinkedList<>();
+//        int i = 0;
+//        for (String postId : twitterIdsList) {
+//            if (i > 50) break;
+        List<Pair<Long, String>> twitterMessageById = getTwitterMessageByMultipleIds(twitter, integerMap, false);
+        saveToFileLong(twitterMessageById, FILE_NAME + EXTENSION_OF_FILE);
+//            pairOfPostIdAndText.add(new Pair<>(postId, twitterMessageById));
+//            i++;
     }
+
 
     public static void debug() throws IOException {
         String tmp = "623083534907912192";
 
         Twitter twitter = getTwitter();
 //        getTwitterMessageById(twitter, tmp, true);
-        getTwitterMessageByMultipleIds(twitter, tmp, true);
+//        getTwitterMessageByMultipleIds(twitter, tmp, true);
     }
 
 
@@ -54,27 +61,40 @@ public class MainGetTwitterCorpus {
 //        saveToFile(allPostsInFile, "testFile");
     }
 
-    public static void parseTOBatches(List<String> twitterIdsList) {
+    public static Map<Integer, long[]> parseTOBatches(List<String> twitterIdsList) {
         Map<Integer, long[]> map = new HashMap<>();
         List<Long> twitterIdsListLong = twitterIdsList.stream().map(Long::parseLong).collect(Collectors.toList());
 
-        List<List<Long>> subSets = Lists.partition(twitterIdsListLong,100);
+        List<List<Long>> subSets = Lists.partition(twitterIdsListLong, 100);
 
         int batchKey = 0;
-        for(List<Long> tmp : subSets) {
+        for (List<Long> tmp : subSets) {
             long[] tmpPrimativeLong = tmp.stream().mapToLong(l -> l).toArray();
-            map.put(batchKey,tmpPrimativeLong);
+            map.put(batchKey, tmpPrimativeLong);
             batchKey++;
         }
 
-        System.out.println(map);
+//        System.out.println(map);
+        return map;
 
     }
 
     public static void saveToFile(List<Pair<String, String>> allPostsInFile, String filePrefix) throws IOException {
-        String fileName = filePrefix + java.time.LocalDateTime.now() + ".txt";
+//        String fileName = filePrefix + "___" + java.time.LocalDateTime.now() + ".txt";
+        String fileName = "preprocessed____" + filePrefix + ".txt";
         BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
         for (Pair<String, String> pair : allPostsInFile) {
+            writer.write(pair.getKey() + "\t" + pair.getValue() + "\n");
+        }
+        writer.close();
+        System.out.println(java.time.LocalDateTime.now());
+    }
+
+    public static void saveToFileLong(List<Pair<Long, String>> allPostsInFile, String filePrefix) throws IOException {
+//        String fileName = filePrefix + java.time.LocalDateTime.now() + ".txt";
+        String fileName = "preprocessed____" + filePrefix + ".txt";
+        BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
+        for (Pair<Long, String> pair : allPostsInFile) {
             writer.write(pair.getKey() + "\t" + pair.getValue() + "\n");
         }
         writer.close();
@@ -93,14 +113,28 @@ public class MainGetTwitterCorpus {
         return pairOfPostIdAndText;
     }
 
-    public static String getTwitterMessageByMultipleIds(Twitter twitter, String twitterPostId, Boolean debug) {
-        Long number = new Long(twitterPostId);
-        String postText;
+
+    //    public static List<Pair<Long,String>> getTwitterMessageByMultipleIds(Twitter twitter, long[] twitterPostIds, Boolean debug) {
+    public static List<Pair<Long, String>> getTwitterMessageByMultipleIds(Twitter twitter, Map<Integer, long[]> twitterPostIds, Boolean debug) {
+//        String postText;
+        List<Pair<Long, String>> out = new LinkedList<>();
         try {
 //            Status status = twitter.showStatus(number);
-            long[] fff = {623054008991772672L, 623055404885372928L, 623056094445871104L};
-            List<Status> uuu = twitter.lookup(fff);
-            System.out.println(uuu);
+//            long[] fff = {623054008991772672L, 623055404885372928L, 623056094445871104L};
+//            int bbbbreak = 0;
+            for (Map.Entry<Integer, long[]> entry : twitterPostIds.entrySet()) {
+                List<Status> uuu = twitter.lookup(entry.getValue());
+                List<Pair<Long, String>> sssss = uuu.stream()
+                        .map(status -> new Pair<>(status.getId(), preprocesssTextMessage(status.getText())))
+                        .collect(Collectors.toList());
+                out.addAll(sssss);
+//                bbbbreak++;
+//                if (bbbbreak > 2) break;
+            }
+//            List<Status> uuu = twitter.lookup(twitterPostIds);
+//            System.out.println(uuu);
+//            List<Pair<Long,String>> sssss  = uuu.stream().map(status -> new Pair<>(status.getId(),status.getText())).collect(Collectors.toList());
+
 //            postText = status.getText();
 //            postText = postText.replace("\n", " ");
 //            postText = postText.replace("\t", " ");
@@ -109,10 +143,16 @@ public class MainGetTwitterCorpus {
 //            }
         } catch (TwitterException e) {
             e.printStackTrace();
-            postText = null;
         }
 
-        return "ppp";
+        return out;
+    }
+
+    public static String preprocesssTextMessage(String message) {
+        message = message.replace("\n", " ");
+        message = message.replace("\t", " ");
+
+        return message;
     }
 
 
